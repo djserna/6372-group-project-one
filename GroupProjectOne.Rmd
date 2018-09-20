@@ -8,6 +8,8 @@ output: html_document
 ```{r importData}
 trainData <- read.csv("train.csv")
 
+head(trainData)
+
 ```
 
 ```{r addUtilityFunctions}
@@ -35,3 +37,49 @@ trainData <- trainData[trainData$state <= 4,]
 pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=trainData, 
    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
 ```
+
+```{r dataAnalysis}
+pairs(~price_doc+full_sq+life_sq+floor+build_year+
+        num_room+kitch_sq+state,data=trainData, 
+   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+
+```
+
+```{r missing values}
+library(tidyverse)
+
+traindata2 <- trainData %>%
+  group_by(build_year, state) %>%
+summarize(mean = mean(price_doc, na.rm= TRUE))
+
+
+
+head(traindata2)
+
+##**/Code for Stepwise/forward
+
+##Full model;
+
+proc reg data = newintAlcohol;                                                                                                             
+model Metabol = Gastric SexCross AlcoholicC FA GF GA GAF;                                                                                                                                                                
+run;  
+
+##Reduced model;
+
+proc reg data = newintAlcohol;                                                                                                             
+model Metabol = Gastric SexCross GF;                                                                                                                                                                
+run;
+
+##In GLM;
+
+proc glm data = newintAlcohol;                                                                                                          
+class Sex Alcoholic;                                                                                                                    
+model Metabol = Gastric | Sex | Alcoholic / solution;                                                                                   
+run; 
+```
+
+
+
+
+
+
