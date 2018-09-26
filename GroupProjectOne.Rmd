@@ -12,7 +12,7 @@ head(trainData)
 
 ```
 
-```{r addUtilityFunctions}
+```{r addUtilityFunctions ----clears all data}
 panel.hist <- function(x, ...)
 {
     usr <- par("usr"); on.exit(par(usr))
@@ -24,7 +24,7 @@ panel.hist <- function(x, ...)
 }
 ```
 
-```{r removeOutliers}
+```{r removeOutliers - clears all data}
 trainData <- trainData[trainData$build_year >= 1691,]
 trainData <- trainData[trainData$build_year <= 2018,]
 trainData <- trainData[trainData$full_sq <= 5000,]
@@ -39,47 +39,55 @@ pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+ki
 ```
 
 ```{r dataAnalysis}
-pairs(~price_doc+full_sq+life_sq+floor+build_year+
-        num_room+kitch_sq+state,data=trainData, 
-   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+library(tidyverse)
+
+str(trainData)
+
+ggplot(data = trainData)+
+  geom_histogram(mapping= aes(x= logprice), binwidth = 5)
+
+trainData %>%
+  count(full_sq())
+
+
+require(stats)
+  plot(trainData)
+  lines(lowess(trainData))
+  
+  
+nrow(trainData)
+
 
 ```
 
 ```{r missing values}
 library(tidyverse)
 
-traindata2 <- trainData %>%
-  group_by(build_year, state) %>%
-summarize(mean = mean(price_doc, na.rm= TRUE))
+
+logprice = log(trainData$price_doc) 
+logfull_sq = log(trainData$full_sq)
+loglife = log(trainData$life_sq)
+logfloor = log(trainData$floor)
+logmaxfl = log(trainData$max_floor)
+logmaterial = log(trainData$material)
+lognumroom = log(trainData$num_room)
+logkitsq = log(trainData$kitch_sq)
+logstate = log(trainData$state)
 
 
+head(trainData)
 
-head(traindata2)
-
-##**/Code for Stepwise/forward
-
-##Full model;
-
-proc reg data = newintAlcohol;                                                                                                             
-model Metabol = Gastric SexCross AlcoholicC FA GF GA GAF;                                                                                                                                                                
-run;  
-
-##Reduced model;
-
-proc reg data = newintAlcohol;                                                                                                             
-model Metabol = Gastric SexCross GF;                                                                                                                                                                
-run;
-
-##In GLM;
-
-proc glm data = newintAlcohol;                                                                                                          
-class Sex Alcoholic;                                                                                                                    
-model Metabol = Gastric | Sex | Alcoholic / solution;                                                                                   
-run; 
+ 
 ```
 
 
+```{r dataAnalysis}
 
+pairs(~logprice+full_sq+life_sq+floor+build_year+
+        num_room+kitch_sq+state,data=trainData, 
+   main="Log Transformed Scatterplot Matrix", diag.panel=panel.hist)
+
+```
 
 
 
