@@ -5,14 +5,16 @@ date: "September 16, 2018"
 output: html_document
 ---
 
+```{r installPackages}
+if(!require(tidyverse)) install.packages("tidyverse")
+if(!require(sqldf)) install.packages("sqldf")
+```
 ```{r importData}
 trainData <- read.csv("train.csv")
-
 head(trainData)
-
 ```
 
-```{r addUtilityFunctions ----clears all data}
+```{r addUtilityFunctions}
 panel.hist <- function(x, ...)
 {
     usr <- par("usr"); on.exit(par(usr))
@@ -24,46 +26,94 @@ panel.hist <- function(x, ...)
 }
 ```
 
-```{r removeOutliers - clears all data}
-trainData <- trainData[trainData$build_year >= 1691,]
-trainData <- trainData[trainData$build_year <= 2018,]
-trainData <- trainData[trainData$full_sq <= 5000,]
-trainData <- trainData[trainData$kitch_sq <= 1500,]
-trainData <- trainData[trainData$life_sq <= 1000,]
-trainData <- trainData[trainData$state <= 4,]
+```{r removeOutliers}
+trainDataCleaned <- trainData[trainData$build_year >= 1691,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$build_year <= 2018,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$full_sq <= 5000,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$kitch_sq <= 1500,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$life_sq <= 1000,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$state <= 4,]
 ```
 
-```{r dataAnalysis}
-pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=trainData, 
+```{r dataAnalysis1}
+pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=trainDataCleaned, 
    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
 ```
 
-```{r dataAnalysis}
+```{r dataAnalysis2}
 library(tidyverse)
 
 str(trainData)
 
-ggplot(data = trainData)+
+ggplot(data = trainDataCleaned)+
   geom_histogram(mapping= aes(x= logprice), binwidth = 5)
 
-trainData %>%
+trainDataCleaned %>%
   count(full_sq())
 
 
 require(stats)
-  plot(trainData)
-  lines(lowess(trainData))
+  plot(trainDataCleaned)
+  lines(lowess(trainDataCleaned))
   
   
-nrow(trainData)
+nrow(trainDataCleaned)
+#dataNoNA <- na.omit(trainDataCleaned)
 
+subset = sqldf("
+SELECT
+  td.price_doc
+,td.full_sq
+,td.life_sq
+,td.floor
+,td.max_floor
+,td.material
+,td.build_year
+,td.num_room
+,td.kitch_sq
+,td.state
+FROM
+trainDataCleaned td
+             ")
+
+#remove all rows with NAs
+subsetNoNa <- na.omit(subset)
+
+#remove additional outliers
+subsetNoNa <- subsetNoNa[subsetNoNa$kitch_sq < 600,]
+subsetNoNa <- subsetNoNa[subsetNoNa$floor > 0,]
+subsetNoNa <- subsetNoNa[subsetNoNa$num_room > 0,]
+subsetNoNa <- subsetNoNa[subsetNoNa$max_floor > 0,]
+
+subsetNoNa$logprice = log(subsetNoNa$price_doc) 
+subsetNoNa$logfull_sq = log(subsetNoNa$full_sq)
+subsetNoNa$logfloor = log(subsetNoNa$floor)
+subsetNoNa$logmaxfl = log(subsetNoNa$max_floor)
+subsetNoNa$logmaterial = log(subsetNoNa$material)
+subsetNoNa$lognumroom = log(subsetNoNa$num_room)
+
+pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=subsetNoNa, 
+   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+
+pairs(~logprice+logfull_sq+logfloor+logmaxfl+logmaterial+build_year+lognumroom+logkitsq+state,data=subsetNoNa, 
+   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+
+```
+
+```{r cooksD}
+
+model <- lm(subsetNoNa$logprice~., data=subsetNoNa)
+cooksd <- cooks.distance(model)
+
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+
+summary(cooksd)
 
 ```
 
 ```{r missing values}
-library(tidyverse)
-
-
 logprice = log(trainData$price_doc) 
 logfull_sq = log(trainData$full_sq)
 loglife = log(trainData$life_sq)
@@ -74,14 +124,11 @@ lognumroom = log(trainData$num_room)
 logkitsq = log(trainData$kitch_sq)
 logstate = log(trainData$state)
 
-
 head(trainData)
-
- 
 ```
 
 
-```{r dataAnalysis}
+```{r dataAnalysis3}
 
 pairs(~logprice+full_sq+life_sq+floor+build_year+
         num_room+kitch_sq+state,data=trainData, 
