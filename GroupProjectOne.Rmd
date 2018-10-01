@@ -33,6 +33,10 @@ trainDataCleaned <- trainDataCleaned[trainDataCleaned$full_sq <= 5000,]
 trainDataCleaned <- trainDataCleaned[trainDataCleaned$kitch_sq <= 1500,]
 trainDataCleaned <- trainDataCleaned[trainDataCleaned$life_sq <= 1000,]
 trainDataCleaned <- trainDataCleaned[trainDataCleaned$state <= 4,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$kitch_sq < 600,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$floor > 0,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$num_room > 0,]
+trainDataCleaned <- trainDataCleaned[trainDataCleaned$max_floor > 0,]
 ```
 
 ```{r dataAnalysis1}
@@ -41,62 +45,83 @@ pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+ki
 ```
 
 ```{r dataAnalysis2}
-library(tidyverse)
 
-str(trainData)
+#convert yes/no values to 1/0
+trainDataCleaned$culture_objects_top_25 <- ifelse(trainDataCleaned$culture_objects_top_25 =="yes", 1, 0)
+trainDataCleaned$full_all <- ifelse(trainDataCleaned$full_all =="yes", 1, 0)
+trainDataCleaned$incineration_raion <- ifelse(trainDataCleaned$incineration_raion =="yes", 1, 0)
+trainDataCleaned$oil_chemistry_raion <- ifelse(trainDataCleaned$oil_chemistry_raion =="yes", 1, 0)
+trainDataCleaned$radiation_raion <- ifelse(trainDataCleaned$radiation_raion =="yes", 1, 0)
+trainDataCleaned$railroad_terminal_raion <- ifelse(trainDataCleaned$railroad_terminal_raion =="yes", 1, 0)
+trainDataCleaned$big_market_raion <- ifelse(trainDataCleaned$big_market_raion =="yes", 1, 0)
+trainDataCleaned$nuclear_reactor_raion <- ifelse(trainDataCleaned$nuclear_reactor_raion =="yes", 1, 0)
+trainDataCleaned$detention_facility_raion <- ifelse(trainDataCleaned$detention_facility_raion =="yes", 1, 0)
+trainDataCleaned$thermal_power_plant_raion <- ifelse(trainDataCleaned$thermal_power_plant_raion =="yes", 1, 0)
+trainDataCleaned$water_1line <- ifelse(trainDataCleaned$water_1line =="yes", 1, 0)
+trainDataCleaned$big_road1_1line <- ifelse(trainDataCleaned$big_road1_1line =="yes", 1, 0)
+trainDataCleaned$railroad_1line <- ifelse(trainDataCleaned$railroad_1line =="yes", 1, 0)
 
-ggplot(data = trainDataCleaned)+
-  geom_histogram(mapping= aes(x= logprice), binwidth = 5)
 
-trainDataCleaned %>%
-  count(full_sq())
+#convert product_type NAs to Investment
+trainDataCleaned[is.na(trainDataCleaned[,which(names(trainDataCleaned) == "product_type")]), which(names(trainDataCleaned) == "product_type")] <- "Investment"
 
+#convert sub_area NAs to Ajeroport
+trainDataCleaned[is.na(trainDataCleaned[,which(names(trainDataCleaned) == "sub_area")]), which(names(trainDataCleaned) == "sub_area")] <- "Ajeroport"
 
-require(stats)
-  plot(trainDataCleaned)
-  lines(lowess(trainDataCleaned))
-  
-  
-nrow(trainDataCleaned)
-#dataNoNA <- na.omit(trainDataCleaned)
+#exclude not numeric columns for NA cleanup.
+columnsToExclude <- names(trainDataCleaned) %in% c("timestamp", "product_type", "sub_area", "ecology") 
+subsetCleaned <- trainDataCleaned[!columnsToExclude]
 
-subset = sqldf("
-SELECT
-  td.price_doc
-,td.full_sq
-,td.life_sq
-,td.floor
-,td.max_floor
-,td.material
-,td.build_year
-,td.num_room
-,td.kitch_sq
-,td.state
-FROM
-trainDataCleaned td
-             ")
+#apply column mean to NA values 
+for(i in 1:ncol(subsetCleaned)){
+  subsetCleaned[is.na(subsetCleaned[,i]), i] <- mean(subsetCleaned[,i], na.rm = TRUE)
+}
 
-#remove all rows with NAs
-subsetNoNa <- na.omit(subset)
+#add non numeric columns back in.
+subsetCleaned$timestamp <- trainDataCleaned$timestamp
+subsetCleaned$product_type <- trainDataCleaned$product_type
+subsetCleaned$sub_area <- trainDataCleaned$sub_area
+subsetCleaned$ecology <- trainDataCleaned$ecology
+
+# subset = sqldf("
+# SELECT
+#   td.price_doc
+# ,td.full_sq
+# ,td.life_sq
+# ,td.floor
+# ,td.max_floor
+# ,td.material
+# ,td.build_year
+# ,td.num_room
+# ,td.kitch_sq
+# ,td.state
+# FROM
+# trainDataCleaned td
+#              ")
+# 
+# #remove all rows with NAs
+# subsetNoNa <- subset
+# subsetNoNa <- na.omit(subset)
+
 
 #remove additional outliers
-subsetNoNa <- subsetNoNa[subsetNoNa$kitch_sq < 600,]
-subsetNoNa <- subsetNoNa[subsetNoNa$floor > 0,]
-subsetNoNa <- subsetNoNa[subsetNoNa$num_room > 0,]
-subsetNoNa <- subsetNoNa[subsetNoNa$max_floor > 0,]
+# subsetNoNa <- subsetNoNa[subsetNoNa$kitch_sq < 600,]
+# subsetNoNa <- subsetNoNa[subsetNoNa$floor > 0,]
+# subsetNoNa <- subsetNoNa[subsetNoNa$num_room > 0,]
+# subsetNoNa <- subsetNoNa[subsetNoNa$max_floor > 0,]
 
-subsetNoNa$logprice = log(subsetNoNa$price_doc) 
-subsetNoNa$logfull_sq = log(subsetNoNa$full_sq)
-subsetNoNa$logfloor = log(subsetNoNa$floor)
-subsetNoNa$logmaxfl = log(subsetNoNa$max_floor)
-subsetNoNa$logmaterial = log(subsetNoNa$material)
-subsetNoNa$lognumroom = log(subsetNoNa$num_room)
-
-pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=subsetNoNa, 
-   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
-
-pairs(~logprice+logfull_sq+logfloor+logmaxfl+logmaterial+build_year+lognumroom+logkitsq+state,data=subsetNoNa, 
-   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+# subsetNoNa$logprice = log(subsetNoNa$price_doc) 
+# subsetNoNa$logfull_sq = log(subsetNoNa$full_sq)
+# subsetNoNa$logfloor = log(subsetNoNa$floor)
+# subsetNoNa$logmaxfl = log(subsetNoNa$max_floor)
+# subsetNoNa$logmaterial = log(subsetNoNa$material)
+# subsetNoNa$lognumroom = log(subsetNoNa$num_room)
+# 
+# pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=subsetNoNa, 
+#    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+# 
+# pairs(~logprice+logfull_sq+logfloor+logmaxfl+logmaterial+build_year+lognumroom+logkitsq+state,data=subsetNoNa, 
+#    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
 
 ```
 
