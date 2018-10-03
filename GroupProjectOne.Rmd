@@ -27,16 +27,17 @@ panel.hist <- function(x, ...)
 ```
 
 ```{r removeOutliers}
-trainDataCleaned <- trainData[trainData$build_year >= 1691,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$build_year <= 2018,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$full_sq <= 5000,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$kitch_sq <= 1500,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$life_sq <= 1000,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$state <= 4,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$kitch_sq < 600,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$floor > 0,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$num_room > 0,]
-trainDataCleaned <- trainDataCleaned[trainDataCleaned$max_floor > 0,]
+trainDataCleaned <- trainData
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$build_year >= 1691 | is.na(trainDataCleaned$build_year)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$build_year <= 2018 | is.na(trainDataCleaned$build_year)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$full_sq <= 5000)| is.na(trainDataCleaned$full_sq),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$kitch_sq <= 1500| is.na(trainDataCleaned$kitch_sq)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$life_sq <= 1000| is.na(trainDataCleaned$life_sq)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$state <= 4| is.na(trainDataCleaned$state)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$kitch_sq < 600| is.na(trainDataCleaned$kitch_sq)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$floor > 0| is.na(trainDataCleaned$floor)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$num_room > 0 | is.na(trainDataCleaned$num_room)),]
+trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$max_floor > 0| is.na(trainDataCleaned$max_floor)),]
 ```
 
 ```{r dataAnalysis1}
@@ -44,7 +45,7 @@ pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+ki
    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
 ```
 
-```{r dataAnalysis2}
+```{r dataCleanup}
 
 #convert yes/no values to 1/0
 trainDataCleaned$culture_objects_top_25 <- ifelse(trainDataCleaned$culture_objects_top_25 =="yes", 1, 0)
@@ -82,47 +83,6 @@ subsetCleaned$timestamp <- trainDataCleaned$timestamp
 subsetCleaned$product_type <- trainDataCleaned$product_type
 subsetCleaned$sub_area <- trainDataCleaned$sub_area
 subsetCleaned$ecology <- trainDataCleaned$ecology
-
-# subset = sqldf("
-# SELECT
-#   td.price_doc
-# ,td.full_sq
-# ,td.life_sq
-# ,td.floor
-# ,td.max_floor
-# ,td.material
-# ,td.build_year
-# ,td.num_room
-# ,td.kitch_sq
-# ,td.state
-# FROM
-# trainDataCleaned td
-#              ")
-# 
-# #remove all rows with NAs
-# subsetNoNa <- subset
-# subsetNoNa <- na.omit(subset)
-
-
-#remove additional outliers
-# subsetNoNa <- subsetNoNa[subsetNoNa$kitch_sq < 600,]
-# subsetNoNa <- subsetNoNa[subsetNoNa$floor > 0,]
-# subsetNoNa <- subsetNoNa[subsetNoNa$num_room > 0,]
-# subsetNoNa <- subsetNoNa[subsetNoNa$max_floor > 0,]
-
-# subsetNoNa$logprice = log(subsetNoNa$price_doc) 
-# subsetNoNa$logfull_sq = log(subsetNoNa$full_sq)
-# subsetNoNa$logfloor = log(subsetNoNa$floor)
-# subsetNoNa$logmaxfl = log(subsetNoNa$max_floor)
-# subsetNoNa$logmaterial = log(subsetNoNa$material)
-# subsetNoNa$lognumroom = log(subsetNoNa$num_room)
-# 
-# pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=subsetNoNa, 
-#    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
-# 
-# pairs(~logprice+logfull_sq+logfloor+logmaxfl+logmaterial+build_year+lognumroom+logkitsq+state,data=subsetNoNa, 
-#    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
-
 ```
 
 ```{r cooksD}
