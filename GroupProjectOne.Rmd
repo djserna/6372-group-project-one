@@ -8,6 +8,8 @@ output: html_document
 ```{r installPackages}
 if(!require(tidyverse)) install.packages("tidyverse")
 if(!require(sqldf)) install.packages("sqldf")
+if(!require(glmnet)) install.packages("glmnet")
+if(!require(randomForest)) install.packages("randomForest")
 ```
 ```{r importData}
 trainData <- read.csv("train.csv")
@@ -38,11 +40,6 @@ trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$kitch_sq < 600| is.n
 trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$floor > 0| is.na(trainDataCleaned$floor)),]
 trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$num_room > 0 | is.na(trainDataCleaned$num_room)),]
 trainDataCleaned <- trainDataCleaned[which(trainDataCleaned$max_floor > 0| is.na(trainDataCleaned$max_floor)),]
-```
-
-```{r dataAnalysis1}
-pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=trainDataCleaned, 
-   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
 ```
 
 ```{r dataCleanup}
@@ -83,6 +80,54 @@ subsetCleaned$timestamp <- trainDataCleaned$timestamp
 subsetCleaned$product_type <- trainDataCleaned$product_type
 subsetCleaned$sub_area <- trainDataCleaned$sub_area
 subsetCleaned$ecology <- trainDataCleaned$ecology
+```
+
+```{r dataAnalysis1}
+pairs(~price_doc+full_sq+life_sq+floor+max_floor+material+build_year+num_room+kitch_sq+state,data=subsetCleaned, 
+   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+```
+
+```{r logTransform}
+subsetCleanedLogged <- subsetCleaned
+subsetCleanedLogged$log_price_doc = log(subsetCleanedLogged$price_doc) 
+subsetCleanedLogged$log_full_sq = log(subsetCleanedLogged$full_sq)
+subsetCleanedLogged$log_life_sq = log(subsetCleanedLogged$life_sq)
+subsetCleanedLogged$log_floor = log(subsetCleanedLogged$floor)
+subsetCleanedLogged$log_max_floor = log(subsetCleanedLogged$max_floor)
+subsetCleanedLogged$log_material = log(subsetCleanedLogged$material)
+subsetCleanedLogged$log_num_room = log(subsetCleanedLogged$num_room)
+subsetCleanedLogged$log_kitch_sq = log(subsetCleanedLogged$kitch_sq)
+subsetCleanedLogged$log_state = log(subsetCleanedLogged$state)
+```
+```{r dataAnalysisLogTransformed}
+pairs(~log_price_doc+log_full_sq+log_life_sq+log_floor+log_max_floor+log_material+log_num_room+log_kitch_sq+log_state,data=subsetCleanedLogged, 
+   main="Simple Scatterplot Matrix", diag.panel=panel.hist)
+```
+
+```{r LASSOAnalyiss}
+log_price_doc_columnIndex <- which(names(subsetCleanedLogged)=="log_price_doc")
+x <- as.matrix(subsetCleanedLogged[,-log_price_doc_columnIndex]) # Removes class
+y <- as.double(as.matrix(subsetCleanedLogged[, log_price_doc_columnIndex])) # Only class
+
+# Fitting the model (Lasso: Alpha = 1)
+set.seed(999)
+cv.lasso <- cv.glmnet(x, y, family='binomial', alpha=1, parallel=TRUE, standardize=TRUE, type.measure='auc')
+
+# Results
+plot(cv.lasso)
+plot(cv.lasso$glmnet.fit, xvar="lambda", label=TRUE)
+cv.lasso$lambda.min
+cv.lasso$lambda.1se
+coef(cv.lasso, s=cv.lasso$lambda.min)
+```
+
+```{r randomForest}
+predictors <- (subsetCleanedLogged[,-log_price_doc_columnIndex]) # Removes class
+response <- (as.matrix(subsetCleanedLogged[, log_price_doc_columnIndex])) # Only class
+fit <- randomForest(x = predictors, y=response,
+                      data=subsetCleanedLogged, 
+                      importance=TRUE, 
+                      ntree=2000)
 ```
 
 ```{r cooksD}
