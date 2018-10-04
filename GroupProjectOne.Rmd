@@ -99,6 +99,9 @@ subsetCleanedLogged$log_num_room = log(subsetCleanedLogged$num_room)
 subsetCleanedLogged$log_kitch_sq = log(subsetCleanedLogged$kitch_sq)
 subsetCleanedLogged$log_state = log(subsetCleanedLogged$state)
 ```
+
+
+
 ```{r dataAnalysisLogTransformed}
 pairs(~log_price_doc+log_full_sq+log_life_sq+log_floor+log_max_floor+log_material+log_num_room+log_kitch_sq+log_state,data=subsetCleanedLogged, 
    main="Simple Scatterplot Matrix", diag.panel=panel.hist)
@@ -130,39 +133,35 @@ fit <- randomForest(x = predictors, y=response,
                       ntree=2000)
 ```
 
-```{r cooksD}
+```{r least angle regression}
 
-model <- lm(subsetNoNa$logprice~., data=subsetNoNa)
-cooksd <- cooks.distance(model)
+library(lars)
 
-plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
-abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
-text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+lasso <- lars(x=as.matrix(subsetCleaned$full_sq,subsetCleaned$life_sq,subsetCleaned$floor,subsetCleaned$max_floor,subsetCleaned$material,subsetCleaned$build_year,subsetCleaned$num_room,subsetCleaned$kitch_sq,subsetCleaned$state,subsetCleaned$product_type,subsetCleaned$sub_area,subsetCleaned$area_m,subsetCleaned$raion_popul,subsetCleaned$green_zone_part,subsetCleaned$indust_part,subsetCleaned$children_preschool), y=subsetCleanedLogged$log_price_doc, type = "lar",  trace = FALSE, normalize = TRUE)
 
-summary(cooksd)
+plot(lasso)
+
 
 ```
 
-```{r missing values}
-logprice = log(trainData$price_doc) 
-logfull_sq = log(trainData$full_sq)
-loglife = log(trainData$life_sq)
-logfloor = log(trainData$floor)
-logmaxfl = log(trainData$max_floor)
-logmaterial = log(trainData$material)
-lognumroom = log(trainData$num_room)
-logkitsq = log(trainData$kitch_sq)
-logstate = log(trainData$state)
-
-head(trainData)
-```
 
 
-```{r dataAnalysis3}
 
-pairs(~logprice+full_sq+life_sq+floor+build_year+
-        num_room+kitch_sq+state,data=trainData, 
-   main="Log Transformed Scatterplot Matrix", diag.panel=panel.hist)
+```{r randomforest sample}
+
+
+data(iris)
+set.seed(111)
+ind <- sample(2, nrow(iris), replace = TRUE, prob=c(0.8, 0.2))
+iris.rf <- randomForest(Species ~ ., data=iris[ind == 1,])
+iris.pred <- predict(iris.rf, iris[ind == 2,])
+table(observed = iris[ind==2, "Species"], predicted = iris.pred)
+## Get prediction for all trees.
+predict(iris.rf, iris[ind == 2,], predict.all=TRUE)
+## Proximities.
+predict(iris.rf, iris[ind == 2,], proximity=TRUE)
+## Nodes matrix.
+str(attr(predict(iris.rf, iris[ind == 2,], nodes=TRUE), "nodes"))
 
 ```
 
