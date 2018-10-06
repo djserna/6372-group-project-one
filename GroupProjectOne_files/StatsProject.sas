@@ -1,3 +1,40 @@
+/* Generated Code (IMPORT) */
+/* Source File: subsetCleaned.csv */
+/* Source Path: /home/dserna0/Code/6372/GroupProject */
+/* Code generated on: 10/6/18, 1:54 PM */
+
+%web_drop_table(data);
+
+
+FILENAME REFFILE '/home/dserna0/Code/6372/GroupProject/subsetCleaned.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=data;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=data; RUN;
+
+
+%web_open_table(data);
+
+%web_drop_table(predictionData);
+
+
+FILENAME REFFILE '/home/dserna0/Code/6372/GroupProject/predictionDataSubsetCleaned.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=predictionData;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=predictionData; RUN;
+
+
+%web_open_table(predictionData);
+
 proc sgscatter data=data;
 plot price_doc*full_sq;
 run;  
@@ -149,7 +186,7 @@ cafe_count_3000 /cli;
 run;	
 
 
-rsq .45;
+/*rsq .45;*/
 
 proc glmselect data=data                                                                                                                                                                            
                seed=1 plots(stepAxis=number)=(criterionPanel ASEPlot CRITERIONPANEL);   
@@ -207,7 +244,7 @@ run;
 
 
 
-rsq 0.455;
+/*rsq 0.455;*/
 proc glmselect data=data                                                                                                                                                                                            
 seed=1 plots(stepAxis=number)=(criterionPanel ASEPlot CRITERIONPANEL); 
 model price_doc = id full_sq life_sq floor max_floor build_year num_room	
@@ -231,4 +268,31 @@ green_part_2000	prom_part_2000
 prom_part_3000 office_count_3000
 office_sqm_3000	cafe_count_3000	
 / selection=backward(choose=CV stop=CV) cvmethod=split(10) CVdetails;                                                                                                                
+run;
+
+/*Generate output file*/
+data outputData;
+set data predictionData;
+run;
+
+proc glm data = outputData plots = all;
+model price_doc = id full_sq life_sq floor max_floor build_year num_room	
+kitch_sq state indust_part children_preschool preschool_quota
+university_top_20_raion	
+radiation_raion	build_count_block 
+build_count_slag kindergarten_km green_zone_km 
+mkad_km sadovoe_km kremlin_km railroad_km railroad_1line thermal_power_plant_km	
+big_market_km office_km mosque_count_3000 green_part_5000
+cafe_count_5000 cafe_avg_price_5000	
+prom_part_2000 office_count_3000
+cafe_count_3000;
+output out = results p = Predict;
+run;
+
+data results2;
+set results;
+if Predict > 0 then price_doc = Predict;
+if Predict < 0 then price_doc = 7123035;
+keep id price_doc;
+where id > 30473;
 run;
