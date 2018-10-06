@@ -13,6 +13,7 @@ if(!require(randomForest)) install.packages("randomForest")
 ```
 ```{r importData}
 trainData <- read.csv("train.csv")
+predictionData <- read.csv("predictionData.csv")
 head(trainData)
 ```
 
@@ -80,6 +81,63 @@ subsetCleaned$timestamp <- trainDataCleaned$timestamp
 subsetCleaned$product_type <- trainDataCleaned$product_type
 subsetCleaned$sub_area <- trainDataCleaned$sub_area
 subsetCleaned$ecology <- trainDataCleaned$ecology
+```
+
+```{r removeOutliersPredictionData}
+#predictionDataCleaned <- predictionData
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year >= 1691 | is.na(predictionDataCleaned$build_year)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year <= 2018 | is.na(predictionDataCleaned$build_year)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$full_sq <= 5000)| is.na(predictionDataCleaned$full_sq),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq <= 1500| is.na(predictionDataCleaned$kitch_sq)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$life_sq <= 1000| is.na(predictionDataCleaned$life_sq)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$state <= 4| is.na(predictionDataCleaned$state)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq < 600| is.na(predictionDataCleaned$kitch_sq)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$floor > 0| is.na(predictionDataCleaned$floor)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$num_room > 0 | is.na(predictionDataCleaned$num_room)),]
+#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$max_floor > 0| is.na(predictionDataCleaned$max_floor)),]
+```
+
+```{r dataCleanupPredictionData}
+predictionDataCleaned <- predictionData
+#convert yes/no values to 1/0
+predictionDataCleaned$culture_objects_top_25 <- ifelse(predictionDataCleaned$culture_objects_top_25 =="yes", 1, 0)
+predictionDataCleaned$full_all <- ifelse(predictionDataCleaned$full_all =="yes", 1, 0)
+predictionDataCleaned$incineration_raion <- ifelse(predictionDataCleaned$incineration_raion =="yes", 1, 0)
+predictionDataCleaned$oil_chemistry_raion <- ifelse(predictionDataCleaned$oil_chemistry_raion =="yes", 1, 0)
+predictionDataCleaned$radiation_raion <- ifelse(predictionDataCleaned$radiation_raion =="yes", 1, 0)
+predictionDataCleaned$railroad_terminal_raion <- ifelse(predictionDataCleaned$railroad_terminal_raion =="yes", 1, 0)
+predictionDataCleaned$big_market_raion <- ifelse(predictionDataCleaned$big_market_raion =="yes", 1, 0)
+predictionDataCleaned$nuclear_reactor_raion <- ifelse(predictionDataCleaned$nuclear_reactor_raion =="yes", 1, 0)
+predictionDataCleaned$detention_facility_raion <- ifelse(predictionDataCleaned$detention_facility_raion =="yes", 1, 0)
+predictionDataCleaned$thermal_power_plant_raion <- ifelse(predictionDataCleaned$thermal_power_plant_raion =="yes", 1, 0)
+predictionDataCleaned$water_1line <- ifelse(predictionDataCleaned$water_1line =="yes", 1, 0)
+predictionDataCleaned$big_road1_1line <- ifelse(predictionDataCleaned$big_road1_1line =="yes", 1, 0)
+predictionDataCleaned$railroad_1line <- ifelse(predictionDataCleaned$railroad_1line =="yes", 1, 0)
+
+
+#convert product_type NAs to Investment
+predictionDataCleaned[is.na(predictionDataCleaned[,which(names(predictionDataCleaned) == "product_type")]), which(names(predictionDataCleaned) == "product_type")] <- "Investment"
+
+#convert sub_area NAs to Ajeroport
+predictionDataCleaned[is.na(predictionDataCleaned[,which(names(predictionDataCleaned) == "sub_area")]), which(names(predictionDataCleaned) == "sub_area")] <- "Ajeroport"
+
+#exclude not numeric columns for NA cleanup.
+columnsToExclude <- names(predictionDataCleaned) %in% c("timestamp", "product_type", "sub_area", "ecology") 
+predictionDataSubsetCleaned <- predictionDataCleaned[!columnsToExclude]
+
+#apply column mean to NA values 
+for(i in 1:ncol(predictionDataSubsetCleaned)){
+  predictionDataSubsetCleaned[is.na(predictionDataSubsetCleaned[,i]), i] <- mean(predictionDataSubsetCleaned[,i], na.rm = TRUE)
+}
+
+#add non numeric columns back in.
+predictionDataSubsetCleaned$timestamp <- predictionDataCleaned$timestamp
+predictionDataSubsetCleaned$product_type <- predictionDataCleaned$product_type
+predictionDataSubsetCleaned$sub_area <- predictionDataCleaned$sub_area
+predictionDataSubsetCleaned$ecology <- predictionDataCleaned$ecology
+
+write.csv(predictionDataSubsetCleaned, "predictionDataSubsetCleaned.csv")
+
 ```
 
 ```{r dataAnalysis1}
