@@ -289,10 +289,71 @@ cafe_count_3000;
 output out = results p = Predict;
 run;
 
-data results2;
+/*predict results;*/
+
+data results;
 set results;
 if Predict > 0 then price_doc = Predict;
 if Predict < 0 then price_doc = 7123035;
 keep id price_doc;
 where id > 30473;
 run;
+
+/**Create subset of timeseries;*/
+data data2; 
+set data;
+keep id timestamp price_doc;
+run;
+
+/**convert timestamp to mon, day, year;*/
+
+DATA new;
+set data2;
+year = scan(timestamp,1);
+month = scan(timestamp,2);
+day = scan(timestamp,3);
+monthYear = cats(year,month);
+RUN;
+
+/**convert month from char to number;*/
+data new3;
+set New2;
+Num_month = input(month, best5.);
+run;
+
+/**sort;*/
+proc sort data=new3;
+by monthYear;
+run;
+
+/**create average price by month;*/
+data new3; set new3;
+proc means; by monthYear;
+var price_doc;
+output out=price mean=AveragePrice;
+run;
+
+
+data price2;
+set price;
+NumMonthYear = input(monthYear, best6.);
+run;
+
+/**sort;*/
+proc sort data=price2;
+by NumMonthYear;
+run;
+
+/**plot data;*/
+proc sgscatter data=price2;
+plot AveragePrice*NumMonthYear;
+run;  
+
+
+/*** proc autoreg with priceData below ***/;
+proc autoreg data=Price2; 
+model AveragePrice = NumMonthYear / nlag =(1) dwprob;
+run;
+
+
+
