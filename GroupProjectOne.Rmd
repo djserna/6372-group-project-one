@@ -84,21 +84,21 @@ subsetCleaned$ecology <- trainDataCleaned$ecology
 ```
 
 ```{r removeOutliersPredictionData}
-#predictionDataCleaned <- predictionData
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year >= 1691 | is.na(predictionDataCleaned$build_year)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year <= 2018 | is.na(predictionDataCleaned$build_year)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$full_sq <= 5000)| is.na(predictionDataCleaned$full_sq),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq <= 1500| is.na(predictionDataCleaned$kitch_sq)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$life_sq <= 1000| is.na(predictionDataCleaned$life_sq)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$state <= 4| is.na(predictionDataCleaned$state)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq < 600| is.na(predictionDataCleaned$kitch_sq)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$floor > 0| is.na(predictionDataCleaned$floor)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$num_room > 0 | is.na(predictionDataCleaned$num_room)),]
-#predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$max_floor > 0| is.na(predictionDataCleaned$max_floor)),]
+predictionDataCleaned <- predictionData
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year >= 1691 | is.na(predictionDataCleaned$build_year)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$build_year <= 2018 | is.na(predictionDataCleaned$build_year)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$full_sq <= 5000)| is.na(predictionDataCleaned$full_sq),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq <= 1500| is.na(predictionDataCleaned$kitch_sq)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$life_sq <= 1000| is.na(predictionDataCleaned$life_sq)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$state <= 4| is.na(predictionDataCleaned$state)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$kitch_sq < 600| is.na(predictionDataCleaned$kitch_sq)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$floor > 0| is.na(predictionDataCleaned$floor)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$num_room > 0 | is.na(predictionDataCleaned$num_room)),]
+predictionDataCleaned <- predictionDataCleaned[which(predictionDataCleaned$max_floor > 0| is.na(predictionDataCleaned$max_floor)),]
 ```
 
 ```{r dataCleanupPredictionData}
-predictionDataCleaned <- predictionData
+#predictionDataCleaned <- predictionData
 #convert yes/no values to 1/0
 predictionDataCleaned$culture_objects_top_25 <- ifelse(predictionDataCleaned$culture_objects_top_25 =="yes", 1, 0)
 predictionDataCleaned$full_all <- ifelse(predictionDataCleaned$full_all =="yes", 1, 0)
@@ -136,7 +136,7 @@ predictionDataSubsetCleaned$product_type <- predictionDataCleaned$product_type
 predictionDataSubsetCleaned$sub_area <- predictionDataCleaned$sub_area
 predictionDataSubsetCleaned$ecology <- predictionDataCleaned$ecology
 
-write.csv(predictionDataSubsetCleaned, "predictionDataSubsetCleaned.csv")
+write.csv(predictionDataSubsetCleaned, "predictionDataSubsetCleaned.csv", row.names = FALSE)
 
 ```
 
