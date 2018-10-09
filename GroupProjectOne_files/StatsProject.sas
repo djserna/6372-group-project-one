@@ -323,52 +323,106 @@ run;
 
 /**sort;*/
 proc sort data=new2;
-by monthYear;
+by month;
 run;
 
 /**create average price by month;*/
 data new3; set new2;
-proc means; by monthYear;
+proc means; by month;
 var price_doc;
 output out=price mean=AveragePrice;
 run;
 
+/* merge our datasets so we can generate prediction files */
+data  mergedPrice;
+   merge new3
+         price (in = in2);
+   by month month;
+   if in2;
+run;
+
 
 data price2;
-set price;
+set mergedPrice;
 NumMonthYear = input(monthYear, best6.);
 run;
 
 /**sort;*/
 proc sort data=price2;
-by NumMonthYear;
+by Num_month;
 run;
 
 /**plot data;*/
 proc sgscatter data=price2;
-plot AveragePrice*NumMonthYear;
+plot AveragePrice*Num_month;
 run;  
 
 
 /*** proc autoreg with priceData below ***/;
 proc autoreg data=price2; 
-model AveragePrice = NumMonthYear / nlag =(1) dwprob;
+model AveragePrice = Num_month / nlag =(1) dwprob;
 run;
+
+data predictionData;
+set predictionData;
+year = scan(timestamp,1);
+month = scan(timestamp,2);
+day = scan(timestamp,3);
+monthYear = cats(year,month);
+RUN;
+
+data predictionData;
+set predictionData;
+Num_month = input(month, best5.);
+RUN;
+
+data predictionData;
+set predictionData;
+NumMonthYear = input(monthYear, best6.);
+RUN;
+
+proc sort data=predictionData;
+by Num_month;
+run;
+
+data  mergedPrediction;
+   merge price2
+         predictionData (in = in2);
+   by Num_month Num_month;
+   if in2;
+run;
+
+/*
+proc sql;
+CREATE TABLE TEST AS
+SELECT
+	predict.*
+	,(
+		SELECT
+			AveragePrice
+		FROM
+			price2
+		WHERE
+			(Num_month = predict.Num_month)
+	) AS AveragePrice
+FROM predictionData predict;
+QUIT;
+*/
 
 /*Generate goal 2 output file*/
 data outputDataGoal2;
-set price2 predictionData;
+set price2 mergedPrediction;
 run;
 
-proc autoreg data=price2; 
-model AveragePrice = NumMonthYear / nlag =(1) dwprob;
-output out = results p = Predict;
+proc autoreg data=outputDataGoal2; 
+model AveragePrice = Num_Month / nlag =(1) dwprob;
+output out = resultsGoal2 p = Predict;
 run;
 
 /*predict results;*/
 
 data resultsOutputGoal2;
-set results;
+set resultsGoal2;
 if Predict > 0 then price_doc = Predict;
 if Predict < 0 then price_doc = 7123035;
 keep id price_doc;
