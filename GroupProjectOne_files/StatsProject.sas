@@ -270,7 +270,7 @@ office_sqm_3000	cafe_count_3000
 / selection=backward(choose=CV stop=CV) cvmethod=split(10) CVdetails;                                                                                                                
 run;
 
-/*Generate output file*/
+/*Generate goal 1 output file*/
 data outputData;
 set data predictionData;
 run;
@@ -291,7 +291,7 @@ run;
 
 /*predict results;*/
 
-data results;
+data resultsOutputGoal1;
 set results;
 if Predict > 0 then price_doc = Predict;
 if Predict < 0 then price_doc = 7123035;
@@ -316,18 +316,18 @@ monthYear = cats(year,month);
 RUN;
 
 /**convert month from char to number;*/
-data new3;
-set New2;
+data new2;
+set new;
 Num_month = input(month, best5.);
 run;
 
 /**sort;*/
-proc sort data=new3;
+proc sort data=new2;
 by monthYear;
 run;
 
 /**create average price by month;*/
-data new3; set new3;
+data new3; set new2;
 proc means; by monthYear;
 var price_doc;
 output out=price mean=AveragePrice;
@@ -351,9 +351,30 @@ run;
 
 
 /*** proc autoreg with priceData below ***/;
-proc autoreg data=Price2; 
+proc autoreg data=price2; 
 model AveragePrice = NumMonthYear / nlag =(1) dwprob;
 run;
+
+/*Generate goal 2 output file*/
+data outputDataGoal2;
+set price2 predictionData;
+run;
+
+proc autoreg data=price2; 
+model AveragePrice = NumMonthYear / nlag =(1) dwprob;
+output out = results p = Predict;
+run;
+
+/*predict results;*/
+
+data resultsOutputGoal2;
+set results;
+if Predict > 0 then price_doc = Predict;
+if Predict < 0 then price_doc = 7123035;
+keep id price_doc;
+where id > 30473;
+run;
+
 
 
 
