@@ -267,6 +267,8 @@ proc autoreg data=price2;
 model AveragePrice = NumMonthYear / nlag =(1) dwprob;
 run;
 
+proc print data=price2;run;
+
 data yearForecast;
 input numMonth NumMonthYear;
 datalines;
@@ -294,6 +296,11 @@ run;
 proc autoreg data=outputDataGoal2; 
 model AveragePrice = NumMonthYear / nlag =(1) dwprob;
 output out = resultsOutputGoal2 p = Predict lcl= lower ucl= upper pm=trend;
+run;
+
+/* generate plot for goal 2 */
+proc glm data=resultsOutputGoal2; 
+model AveragePrice = NumMonthYear / cli;
 run;
 
 
